@@ -1,0 +1,271 @@
+﻿@page "/products"
+@rendermode InteractiveServer
+@using Microsoft.JSInterop
+@using Product.Blazor.Services
+
+@inject ProductApiService ProductApi
+@inject NavigationManager NavigationManager
+@inject IJSRuntime JS
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2>Product Management</h2>
+                
+                <div class="btn-group">
+                    <button class="btn btn-success" @onclick="CreateProduct">
+                        <i class="fas fa-plus"></i> Create a Product
+                    </button>
+                </div>
+            </div>
+
+            @if (!string.IsNullOrEmpty(errorMessage))
+            {
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    <i class="fas fa-exclamation-triangle"></i> @errorMessage
+                    <button type="button" class="btn-close" @onclick="ClearError"></button>
+                </div>
+            }
+
+            @if (!string.IsNullOrEmpty(successMessage))
+            {
+                <div class="alert alert-success alert-dismissible fade show" role="alert">
+                    <i class="fas fa-check-circle"></i> @successMessage
+                    <button type="button" class="btn-close" @onclick="ClearSuccess"></button>
+                </div>
+            }
+
+            @if (isLoading)
+            {
+                <div class="d-flex justify-content-center align-items-center" style="min-height: 200px;">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <span class="ms-3">Loading products...</span>
+                </div>
+            }
+            else if (products?.Any() == true)
+            {
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">Products (@products.Count)</h5>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Name</th>
+                                        <th>Price</th>
+                                        <th>Description</th>
+                                        <th class="text-end">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var product in products)
+                                    {
+                                        <tr>
+                                            <td><strong>#@product.Id</strong></td>
+                                            <td>
+                                                <div class="fw-medium">@product.Name</div>
+                                            </td>
+                                            <td>
+                                                <span class="badge bg-success">@product.Price.ToString("C")</span>
+                                            </td>
+                                            <td>
+                                                <div class="text-truncate" style="max-width: 200px;" title="@product.Description">
+                                                    @(string.IsNullOrEmpty(product.Description) ? "No description" : product.Description)
+                                                </div>
+                                            </td>
+                                            <td class="text-end">
+                                                <div class="btn-group" role="group">
+                                                    <button class="btn btn-sm btn-outline-primary" 
+                                                            @onclick="() => ViewProduct(product.Id)" 
+                                                            title="View Details"
+                                                            disabled="@isLoading">
+                                                        <i class="fas fa-eye"></i>
+                                                    </button>
+                                                    <button class="btn btn-sm btn-outline-secondary" 
+                                                            @onclick="() => EditProduct(product.Id)" 
+                                                            title="Edit Product"
+                                                            disabled="@isLoading">
+                                                        <i class="fas fa-edit"></i>
+                                                    </button>
+                                                    <button class="btn btn-sm btn-outline-danger" 
+                                                            @onclick="() => DeleteProduct(product.Id)" 
+                                                            title="Delete Product"
+                                                            disabled="@isLoading">
+                                                        <i class="fas fa-trash"></i>
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            }
+            else if (!isLoading && products != null)
+            {
+                <div class="text-center py-5">
+                    <div class="mb-4">
+                        <i class="fas fa-box-open fa-3x text-muted"></i>
+                    </div>
+                    <h4 class="text-muted">No Products Found</h4>
+                    <p class="text-muted mb-4">Get started by creating your first product.</p>
+                    <button class="btn btn-primary" @onclick="CreateProduct">
+                        <i class="fas fa-plus"></i> Create First Product
+                    </button>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@code {
+    private List<Models.Product>? products;
+    private bool isLoading = true;
+    private string? errorMessage;
+    private string? successMessage;
+    private string lastTest = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadProducts();
+    }
+
+    private async Task LoadProducts()
+    {
+        isLoading = true;
+        ClearMessages();
+        
+        var result = await ProductApi.GetProductsAsync();
+        
+        if (result.IsSuccess)
+        {
+            products = result.Data ?? new List<Models.Product>();
+        }
+        else
+        {
+            errorMessage = result.ErrorMessage;
+            products = new List<Models.Product>();
+        }
+        
+        isLoading = false;
+        StateHasChanged();
+    }
+
+    private void CreateProduct()
+    {
+        Console.WriteLine("CreateProduct method called - navigating to /editproduct/0");
+        try
+        {
+            // Try with forceLoad to ensure navigation happens
+            NavigationManager.NavigateTo("/editproduct/0", forceLoad: true);
+            Console.WriteLine("Navigation completed with forceLoad");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Navigation error: {ex.Message}");
+            // Fallback: try without forceLoad
+            try
+            {
+                NavigationManager.NavigateTo("/editproduct/0");
+                Console.WriteLine("Fallback navigation completed");
+            }
+            catch (Exception ex2)
+            {
+                Console.WriteLine($"Fallback navigation error: {ex2.Message}");
+            }
+        }
+    }
+
+    private void ViewProduct(int id)
+    {
+        NavigationManager.NavigateTo($"/product/{id}");
+    }
+
+    private void EditProduct(int id)
+    {
+        NavigationManager.NavigateTo($"/editproduct/{id}");
+    }
+
+    private async Task DeleteProduct(int id)
+    {
+        var product = products?.FirstOrDefault(p => p.Id == id);
+        if (product == null) return;
+
+        var confirmed = await JS.InvokeAsync<bool>("confirm", 
+            $"Are you sure you want to delete '{product.Name}'?\n\nThis action cannot be undone.");
+        
+        if (!confirmed) return;
+
+        isLoading = true;
+        ClearMessages();
+
+        var result = await ProductApi.DeleteProductAsync(id);
+        
+        if (result.IsSuccess)
+        {
+            successMessage = $"Product '{product.Name}' was successfully deleted.";
+            await LoadProducts();
+        }
+        else
+        {
+            errorMessage = result.ErrorMessage;
+            isLoading = false;
+        }
+        
+        StateHasChanged();
+    }
+
+    private void ClearMessages()
+    {
+        errorMessage = null;
+        successMessage = null;
+    }
+
+    private void ClearError()
+    {
+        errorMessage = null;
+    }
+
+    private void ClearSuccess()
+    {
+        successMessage = null;
+    }
+
+    private void TestButtonClick(string testName)
+    {
+        lastTest = $"{testName} at {DateTime.Now:HH:mm:ss}";
+        Console.WriteLine($"Test button '{testName}' clicked at {DateTime.Now}");
+        StateHasChanged();
+    }
+
+    private EventCallback HandleCreateProduct => EventCallback.Factory.Create(this, CreateProduct);
+    
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            // Add JavaScript function for testing
+            await JS.InvokeVoidAsync("eval", @"
+                window.blazorCreateProduct = function() {
+                    console.log('JavaScript function called - calling DotNet method');
+                    DotNet.invokeMethodAsync('Product.Blazor', 'JSCreateProduct');
+                };
+            ");
+        }
+    }
+    
+    [JSInvokable]
+    public static void JSCreateProduct()
+    {
+        Console.WriteLine("JSCreateProduct called from JavaScript");
+        // Note: This won't navigate because it's static, but it tests the callback
+    }
+}

@@ -1,0 +1,207 @@
+﻿@page "/editproduct/{Id:int}"
+@using Microsoft.AspNetCore.Components.Forms
+@using Product.Blazor.Services
+@using System.ComponentModel.DataAnnotations
+
+@inject ProductApiService ProductApi
+@inject NavigationManager NavigationManager
+
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h4 class="mb-0">
+                            <i class="fas @(IsNewProduct ? "fa-plus" : "fa-edit")"></i>
+                            @(IsNewProduct ? "Add New Product" : $"Edit Product #{Id}")
+                        </h4>
+                    </div>
+                </div>
+                <div class="card-body">
+                    @if (!string.IsNullOrEmpty(errorMessage))
+                    {
+                        <div class="alert alert-danger" role="alert">
+                            <i class="fas fa-exclamation-triangle"></i> @errorMessage
+                        </div>
+                    }
+
+                    @if (isLoading && !IsNewProduct)
+                    {
+                        <div class="d-flex justify-content-center align-items-center py-5">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                            <span class="ms-3">Loading product...</span>
+                        </div>
+                    }
+                    else if (!isLoading || IsNewProduct)
+                    {
+                        <EditForm Model="productModel" OnValidSubmit="HandleValidSubmit" FormName="ProductEditForm">
+                            <DataAnnotationsValidator />
+                            
+                            <div class="mb-4">
+                                <label for="name" class="form-label">Product Name <span class="text-danger">*</span></label>
+                                <InputText @bind-Value="productModel.Name" 
+                                          class="form-control" 
+                                          id="name" 
+                                          placeholder="Enter product name"
+                                          disabled="@isSaving" />
+                                <ValidationMessage For="@(() => productModel.Name)" class="text-danger" />
+                            </div>
+
+                            <div class="mb-4">
+                                <label for="price" class="form-label">Price <span class="text-danger">*</span></label>
+                                <div class="input-group">
+                                    <span class="input-group-text">$</span>
+                                    <InputNumber @bind-Value="productModel.Price" 
+                                               class="form-control" 
+                                               id="price" 
+                                               step="0.01" 
+                                               placeholder="0.00"
+                                               disabled="@isSaving" />
+                                </div>
+                                <ValidationMessage For="@(() => productModel.Price)" class="text-danger" />
+                            </div>
+
+                            <div class="mb-4">
+                                <label for="description" class="form-label">Description</label>
+                                <InputTextArea @bind-Value="productModel.Description" 
+                                             class="form-control" 
+                                             id="description" 
+                                             rows="4" 
+                                             placeholder="Enter product description (optional)"
+                                             disabled="@isSaving" />
+                                <ValidationMessage For="@(() => productModel.Description)" class="text-danger" />
+                                <div class="form-text">
+                                    @if (!string.IsNullOrEmpty(productModel.Description))
+                                    {
+                                        <span>@productModel.Description.Length / 1000 characters</span>
+                                    }
+                                </div>
+                            </div>
+
+                            <ValidationSummary class="alert alert-warning" />
+
+                            <div class="d-flex gap-2 justify-content-end">
+                                <button type="submit" class="btn btn-primary" disabled="@isSaving">
+                                    @if (isSaving)
+                                    {
+                                        <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+                                    }
+                                    else
+                                    {
+                                        <i class="fas @(IsNewProduct ? "fa-plus" : "fa-save")"></i>
+                                    }
+                                    @(isSaving ? "Saving..." : (IsNewProduct ? "Create Product" : "Update Product"))
+                                </button>
+                            </div>
+                        </EditForm>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter] public int Id { get; set; }
+
+    [SupplyParameterFromForm]
+    private ProductModel productModel { get; set; } = new();
+    private bool isLoading = true;
+    private bool isSaving = false;
+    private string? errorMessage;
+
+    private bool IsNewProduct => Id == 0;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (!IsNewProduct)
+        {
+            await LoadProduct();
+        }
+        else
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task LoadProduct()
+    {
+        if (!isSaving && !IsNewProduct && Id != 0)
+        {
+            isLoading = true;
+            errorMessage = null;
+
+            var result = await ProductApi.GetProductAsync(Id);
+
+            if (result.IsSuccess && result.Data != null)
+            {
+                var product = result.Data;
+                productModel = new ProductModel
+                {
+                    Id = product.Id,
+                    Name = product.Name,
+                    Price = product.Price,
+                    Description = product.Description
+                };
+            }
+            else
+            {
+                errorMessage = result.ErrorMessage ?? "Product not found.";
+            }
+
+            isLoading = false;
+            StateHasChanged();
+        }
+        
+    }
+
+    private async Task HandleValidSubmit()
+    {
+        isSaving = true;
+        errorMessage = null;
+
+        var product = new Models.Product
+        {
+            Id = productModel.Id,
+            Name = productModel.Name.Trim(),
+            Price = productModel.Price,
+            Description = productModel.Description?.Trim() ?? string.Empty
+        };
+
+        var result = IsNewProduct 
+            ? await ProductApi.CreateProductAsync(product)
+            : await ProductApi.UpdateProductAsync(product);
+
+        if (result.IsSuccess)
+        {
+            NavigationManager.NavigateTo("/products");
+        }
+        else
+        {
+            errorMessage = result.ErrorMessage;
+        }
+
+        isSaving = false;
+        StateHasChanged();
+    }
+
+    // Model class for form validation
+    public class ProductModel
+    {
+        public int Id { get; set; }
+
+        [Required(ErrorMessage = "Product name is required")]
+        [StringLength(100, MinimumLength = 1, ErrorMessage = "Product name must be between 1 and 100 characters")]
+        public string Name { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "Price is required")]
+        [Range(0.01, double.MaxValue, ErrorMessage = "Price must be greater than 0")]
+        public decimal Price { get; set; }
+
+        [StringLength(1000, ErrorMessage = "Description cannot exceed 1000 characters")]
+        public string Description { get; set; } = string.Empty;
+    }
+}

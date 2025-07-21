@@ -1,0 +1,255 @@
+# ProductAPI HTTP Tests
+# Use this file to test the ProductAPI endpoints directly in VS Code or other HTTP clients
+#Ensure either ProductAPI is running (either via aspire or standalone setup)
+# @ProductAPI_HostAddress = https://localhost:7071
+# Alternative HTTP endpoint if HTTPS has issues:
+@ProductAPI_HostAddress = http://localhost:5262
+
+### GET all products (should return empty array initially)
+GET {{ProductAPI_HostAddress}}/products
+Accept: application/json
+
+###
+
+### POST create first test product
+POST {{ProductAPI_HostAddress}}/products
+Content-Type: application/json
+
+{
+  "name": "Laptop Pro",
+  "price": 1299.99,
+  "description": "High-performance laptop for developers"
+}
+
+###
+
+### POST create second test product  
+POST {{ProductAPI_HostAddress}}/products
+Content-Type: application/json
+
+{
+  "name": "Wireless Mouse",
+  "price": 29.99,
+  "description": "Ergonomic wireless mouse with RGB lighting"
+}
+
+###
+
+### POST create third test product
+POST {{ProductAPI_HostAddress}}/products
+Content-Type: application/json
+
+{
+  "name": "Mechanical Keyboard",
+  "price": 149.99,
+  "description": "Cherry MX Blue switches, RGB backlit"
+}
+
+###
+
+### GET all products (should now return 3 products)
+GET {{ProductAPI_HostAddress}}/products
+Accept: application/json
+
+###
+
+### GET product by id (replace 1 with actual ID from previous responses)
+GET {{ProductAPI_HostAddress}}/products/1
+Accept: application/json
+
+###
+
+### PUT update existing product (replace 1 with actual ID)
+PUT {{ProductAPI_HostAddress}}/products/1
+Content-Type: application/json
+
+{
+  "name": "Updated Laptop Pro",
+  "price": 1399.99,
+  "description": "Updated: Now with 32GB RAM and 1TB SSD"
+}
+
+###
+
+### GET updated product to verify changes
+GET {{ProductAPI_HostAddress}}/products/1
+Accept: application/json
+
+###
+
+### DELETE product (replace 1 with actual ID)
+DELETE {{ProductAPI_HostAddress}}/products/1
+
+###
+
+### Verify deletion - should return 404
+GET {{ProductAPI_HostAddress}}/products/1
+Accept: application/json
+
+###
+
+## VALIDATION TESTS
+
+### Test validation - CREATE with missing name (should return 400)
+POST {{ProductAPI_HostAddress}}/products
+Content-Type: application/json
+
+{
+  "name": "",
+  "price": 19.99,
+  "description": "Invalid product - no name"
+}
+
+###
+
+### Test validation - CREATE with negative price (should return 400)
+POST {{ProductAPI_HostAddress}}/products
+Content-Type: application/json
+
+{
+  "name": "Invalid Product",
+  "price": -5.00,
+  "description": "Invalid product with negative price"
+}
+
+###
+
+### Test validation - CREATE with extremely long name (should return 400)
+POST {{ProductAPI_HostAddress}}/products
+Content-Type: application/json
+
+{
+  "name": "This is an extremely long product name that exceeds the 100 character limit for product names which should cause a validation error",
+  "price": 19.99,
+  "description": "Product with name too long"
+}
+
+###
+
+### Test validation - CREATE with extremely long description (should return 400)
+POST {{ProductAPI_HostAddress}}/products
+Content-Type: application/json
+
+{
+  "name": "Valid Product Name",
+  "price": 19.99,
+  "description": "This is an extremely long description that exceeds the normal limits for product descriptions. It contains way too much text and should trigger a validation error if the system properly validates description length. This description is intentionally verbose and repetitive to test the validation logic thoroughly. It continues on and on with unnecessary details to ensure it exceeds any reasonable length limit that might be implemented in the system. The description keeps going with more and more text to really test the boundaries of what should be acceptable in a product description field. This should definitely cause a validation error if the system is working correctly and enforcing proper data validation rules for product descriptions."
+}
+
+###
+
+## ERROR HANDLING TESTS
+
+### Test 404 - GET non-existent product
+GET {{ProductAPI_HostAddress}}/products/99999
+Accept: application/json
+
+###
+
+### Test 404 - UPDATE non-existent product (should return 404)
+PUT {{ProductAPI_HostAddress}}/products/99999
+Content-Type: application/json
+
+{
+  "name": "Non-existent Product",
+  "price": 19.99,
+  "description": "This product doesn't exist"
+}
+
+###
+
+### Test 404 - DELETE non-existent product (should return 404)
+DELETE {{ProductAPI_HostAddress}}/products/99999
+
+###
+
+## BULK TESTING SCENARIOS
+
+### Create multiple products for testing
+POST {{ProductAPI_HostAddress}}/products
+Content-Type: application/json
+
+{
+  "name": "Monitor 27\"",
+  "price": 299.99,
+  "description": "4K UHD monitor with HDR support"
+}
+
+###
+
+POST {{ProductAPI_HostAddress}}/products
+Content-Type: application/json
+
+{
+  "name": "Webcam HD",
+  "price": 79.99,
+  "description": "1080p webcam with auto-focus"
+}
+
+###
+
+POST {{ProductAPI_HostAddress}}/products
+Content-Type: application/json
+
+{
+  "name": "Desk Chair",
+  "price": 199.99,
+  "description": "Ergonomic office chair with lumbar support"
+}
+
+###
+
+POST {{ProductAPI_HostAddress}}/products
+Content-Type: application/json
+
+{
+  "name": "USB-C Hub",
+  "price": 49.99,
+  "description": "7-in-1 USB-C hub with 4K HDMI output"
+}
+
+###
+
+### GET all products after bulk creation
+GET {{ProductAPI_HostAddress}}/products
+Accept: application/json
+
+###
+
+## EDGE CASE TESTS
+
+### Test with minimum price (0.01)
+POST {{ProductAPI_HostAddress}}/products
+Content-Type: application/json
+
+{
+  "name": "Penny Item",
+  "price": 0.01,
+  "description": "Minimum price test"
+}
+
+###
+
+### Test with very high price
+POST {{ProductAPI_HostAddress}}/products
+Content-Type: application/json
+
+{
+  "name": "Expensive Item",
+  "price": 999999.99,
+  "description": "Maximum price test"
+}
+
+###
+
+### Test with special characters in name
+POST {{ProductAPI_HostAddress}}/products
+Content-Type: application/json
+
+{
+  "name": "Product™ with Special@Chars & More!",
+  "price": 25.50,
+  "description": "Testing special characters: <>?:\"{}[]±§!@#$%^&*()"
+}
+
+###

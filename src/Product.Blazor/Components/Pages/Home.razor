@@ -1,0 +1,65 @@
+﻿@page "/"
+
+<PageTitle>Home - Product Management</PageTitle>
+
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="text-center py-5">
+                <div class="mb-4">
+                    <i class="fas fa-boxes fa-4x text-primary"></i>
+                </div>
+                <h1 class="display-4 fw-bold mb-3">Product Management System</h1>                
+                <div class="d-flex gap-3 justify-content-center flex-wrap">
+                    <a href="/products" class="btn btn-primary btn-lg">
+                        <i class="fas fa-box me-2"></i>View Products
+                    </a>
+                    <a href="/editproduct/0" class="btn btn-outline-success btn-lg">
+                        <i class="fas fa-plus me-2"></i>Add New Product
+                    </a>
+                </div>
+            </div>
+            
+            <div class="row g-4 mt-5">
+                <div class="col-md-4">
+                    <div class="card h-100 text-center border-0 shadow-sm">
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <i class="fas fa-list fa-2x text-info"></i>
+                            </div>
+                            <h5 class="card-title">View All Products</h5>
+                            <p class="card-text">Browse your complete product catalog with quick actions.</p>
+                            <a href="/products" class="btn btn-outline-info">Browse Products</a>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-4">
+                    <div class="card h-100 text-center border-0 shadow-sm">
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <i class="fas fa-plus-circle fa-2x text-success"></i>
+                            </div>
+                            <h5 class="card-title">Add Products</h5>
+                            <p class="card-text">Easily create new products with names, prices, and detailed descriptions.</p>
+                            <a href="/editproduct/0" class="btn btn-outline-success">Add Product</a>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-4">
+                    <div class="card h-100 text-center border-0 shadow-sm">
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <i class="fas fa-edit fa-2x text-warning"></i>
+                            </div>
+                            <h5 class="card-title">Manage Products</h5>
+                            <p class="card-text">Update product information, modify prices, and manage your inventory efficiently.</p>
+                            <a href="/products" class="btn btn-outline-warning">Manage</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
